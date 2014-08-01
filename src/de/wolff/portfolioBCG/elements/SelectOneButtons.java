@@ -1,8 +1,8 @@
-package de.wolff.portfolioBCG;
+package de.wolff.portfolioBCG.elements;
 
 import processing.core.PApplet;
 
-class SelectOneButtons {
+public class SelectOneButtons {
 
 	private final PApplet app;
 	private Button[] buttons;
@@ -37,7 +37,7 @@ class SelectOneButtons {
 		return actualButton;
 	}
 
-	class Button {
+	public class Button {
 
 		private String text;
 		

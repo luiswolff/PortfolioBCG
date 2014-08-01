@@ -1,9 +1,9 @@
-package de.wolff.portfolioBCG;
+package de.wolff.portfolioBCG.elements;
 
 import processing.core.PApplet;
 import processing.core.PImage;
 
-class CheckBox {
+public class CheckBox {
 
 	private PApplet app;
 	private int size;
@@ -15,7 +15,7 @@ class CheckBox {
 	private boolean clicked = false;
 	private boolean checked = false;
 
-	CheckBox(PApplet app, int size, int xPos, int yPos, PImage hook) {
+	public CheckBox(PApplet app, int size, int xPos, int yPos, PImage hook) {
 		this.app = app;
 		this.size = size;
 		this.xPos = xPos;
@@ -49,7 +49,7 @@ class CheckBox {
 		return checked;
 	}
 
-	void display() {
+	public void display() {
 		if (over) {
 			app.stroke(100);
 			app.fill(150);
@@ -59,8 +59,13 @@ class CheckBox {
 		}
 		app.strokeWeight(10);
 		app.rect(xPos, yPos, size, size);
+		app.imageMode(PApplet.CORNER);
 		if (checked) {
 			app.image(hook, xPos, yPos);
 		}
+		
+		app.textAlign(PApplet.LEFT, PApplet.CENTER);
+		app.textSize(16);
+		app.text("Zeige Vorperiode", xPos + 30, yPos + 10);
 	}
 }

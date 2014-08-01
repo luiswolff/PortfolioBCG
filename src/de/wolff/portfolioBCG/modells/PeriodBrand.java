@@ -1,29 +1,29 @@
 package de.wolff.portfolioBCG.modells;
 
-public class Brand {
-	
-	private Manufacture manufacture;
+public class PeriodBrand{
 	
 	private String name;
 	
-	private float turnover;
+	private Manufacture manufacture;
+	
+	private Float turnover;
 
-	public Brand(Manufacture manufacture, String name, float turnover) {
+	public PeriodBrand(String name, Manufacture manufacture, Float turnover) {
 		super();
-		this.manufacture = manufacture;
 		this.name = name;
+		this.manufacture = manufacture;
 		this.turnover = turnover;
-	}
-
-	public Manufacture getManufacture() {
-		return manufacture;
 	}
 
 	public String getName() {
 		return name;
 	}
-
-	public float getTurnover() {
+	
+	public Manufacture getManufacture(){
+		return manufacture;
+	}
+	
+	public Float getTurnover(){
 		return turnover;
 	}
 
@@ -34,7 +34,6 @@ public class Brand {
 		result = prime * result
 				+ ((manufacture == null) ? 0 : manufacture.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + Float.floatToIntBits(turnover);
 		return result;
 	}
 
@@ -46,7 +45,7 @@ public class Brand {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Brand other = (Brand) obj;
+		PeriodBrand other = (PeriodBrand) obj;
 		if (manufacture == null) {
 			if (other.manufacture != null)
 				return false;
@@ -57,9 +56,13 @@ public class Brand {
 				return false;
 		} else if (!name.equals(other.name))
 			return false;
-		if (Float.floatToIntBits(turnover) != Float
-				.floatToIntBits(other.turnover))
-			return false;
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return name;
+	}
+	
+	
 }

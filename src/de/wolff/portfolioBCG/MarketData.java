@@ -9,6 +9,8 @@ public interface MarketData {
 	
 	public List<Period> getPeriods();
 	
+	public int getPeriodsCount();
+	
 	public Manufacture getCompany();
 	
 	public float getTargetGrowth();

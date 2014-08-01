@@ -1,23 +1,16 @@
 package de.wolff.portfolioBCG.modells;
 
-public class Manufacture {
+public class Manufacture{
 	
 	private String name;
 	
-	private float turnover;
-	
-	public Manufacture(String name, float turnover) {
+	public Manufacture(String name) {
 		super();
 		this.name = name;
-		this.turnover = turnover;
 	}
 
 	public String getName(){
 		return name;
-	}
-	
-	public float getTurnover(){
-		return turnover;
 	}
 
 	@Override
@@ -43,6 +36,11 @@ public class Manufacture {
 		} else if (!name.equals(other.name))
 			return false;
 		return true;
+	}
+	
+	@Override
+	public String toString(){
+		return name;
 	}
 
 }
