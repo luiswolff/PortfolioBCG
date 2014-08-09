@@ -1,7 +1,5 @@
 package de.wolff.portfolioBCG.elements;
 
-import java.lang.Float;
-
 import processing.core.PApplet;
 
 public class Scrollbar {
@@ -18,10 +16,16 @@ public class Scrollbar {
 	private String[] labels = new String[0];
 
 	public Scrollbar(PApplet app, float xpos, float ypos, int swidth,
-			int sheight, String[] texts) {
+			int sheight, int loose, Object[] labels) {
 		this.app = app;
 		rail = new Rail(swidth, sheight, xpos, ypos);
-		slider = new Slider();
+		slider = new Slider(loose);
+		int length = labels.length;
+		this.labels = new String[length];
+		for (int i = 0; i < length; i++){
+			this.labels[i] = labels[i].toString();
+		}
+		setPositions(length);
 	}
 
 	public boolean mouseOver() {
@@ -74,17 +78,7 @@ public class Scrollbar {
 		return slider.xpos;
 	}
 
-	public void setLoose(int loose) {
-		slider.loose = loose;
-	}
-
-	public void setLabel(String[] labels) {
-		setPositions(labels.length);
-		this.labels = labels;
-	}
-
-	public void setPositions(int posCount) {
-		labels = new String[0];
+	private void setPositions(int posCount) {
 		actualArea = posCount;
 		
 		positions = new float[posCount];
@@ -97,7 +91,7 @@ public class Scrollbar {
 		slider.actualizesPos();
 	}
 	
-	public void setBorders(float[] positions){
+	private void setBorders(float[] positions){
 		int posCount = positions.length;
 		if (posCount <= 1){
 			borders = new float[0];
@@ -124,6 +118,10 @@ public class Scrollbar {
 		private float newPos = xpos;
 		private int loose = 32;
 		private boolean locked = false;
+		
+		public Slider(int loose){
+			this.loose = loose;
+		}
 
 		public void update() {
 			if (app.mousePressed && over) {

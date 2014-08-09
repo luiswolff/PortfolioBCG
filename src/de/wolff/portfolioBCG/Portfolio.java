@@ -2,13 +2,16 @@ package de.wolff.portfolioBCG;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import processing.core.PApplet;
 import processing.core.PImage;
+import de.wolff.portfolioBCG.Portfolio.PortfolioArea.SBUCircle;
 import de.wolff.portfolioBCG.elements.Abscissa;
 import de.wolff.portfolioBCG.elements.CheckBox;
 import de.wolff.portfolioBCG.elements.Ordinate;
 import de.wolff.portfolioBCG.elements.Scrollbar;
+import de.wolff.portfolioBCG.modells.Manufacture;
 import de.wolff.portfolioBCG.modells.Period;
 import de.wolff.portfolioBCG.modells.PeriodBrand;
 import de.wolff.portfolioBCG.modells.PeriodSBU;
@@ -18,29 +21,21 @@ public class Portfolio extends PApplet {
 	private static String dataClass;
 
 	private MarketData data = null;
+
+	private Properties displayProps;
 	
-	// private SelectOneButtons sob;
+	private Properties textProps;
 
 	private CheckBox cb;
 
 	private Scrollbar sb;
 
-	private Abscissa xAxis;
-
-	private Ordinate yAxis;
-
-	private ArrayList<SBUCircle> sbuCircles;
-
-	private SBUCircle hoverdCircle = null;
-
-	private SBUCircle selectedCircle = null;
-
-	private float portfolioXcenter;
-
-	private float portfolioYcenter;
-
-	private String we;
+	private PortfolioArea area;
 	
+	private PortfolioInfo info;
+
+	private Manufacture venture;
+
 	private List<Period> periods;
 
 	private Period period = null;
@@ -50,79 +45,81 @@ public class Portfolio extends PApplet {
 	private boolean checked = false;
 
 	private boolean pchecked = false;
-	
+
 	private PImage star;
-	
-	private PImage questonmark;
-	
-	private PImage cashCow;
-	
-	private PImage poorDog;
+
+	private PImage quest;
+
+	private PImage cow;
+
+	private PImage dog;
+
+	public Portfolio() {
+		try {
+			Class<?> data = getClass().getClassLoader().loadClass(dataClass);
+			Object obj = data.newInstance();
+			if (obj instanceof MarketData)
+				this.data = (MarketData) obj;
+			else {
+				throw new Exception("No valid Data");
+			}
+			displayProps = new PropertiesFile("conf/display.properties");
+			textProps = new PropertiesFile("conf/text.properties");
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	public void setup() {
-		loadData();
-		we = data.getCompany().getName();
-		frame.setTitle("Portfolio " + we);
-		star = loadImage("star.png");
-		questonmark = loadImage("questionmark.png");
-		cashCow = loadImage("cash_cow.png");
-		poorDog = loadImage("poor_dog.png");
-		size(800, 600);
+		venture = data.getCompany();
+		String title = String.format(textProps.getProperty("frame_title"), venture);
+		frame.setTitle(title);
+		area = new PortfolioArea();
+		info = new PortfolioInfo();
 
-		float growthTarget = data.getTargetGrowth();
-		xAxis = new Abscissa(this, 80, 490, 470, 5);
-		xAxis.setLogBase(5);
-		yAxis = new Ordinate(this, 80, 20, 470, 5);
-		yAxis.setMiddle(growthTarget);
-		yAxis.setRange(5);
+		star = loadImage(displayProps.getProperty("star_image_path"));
+		quest = loadImage(displayProps.getProperty("quest_image_path"));
+		cow = loadImage(displayProps.getProperty("cow_image_path"));
+		dog = loadImage(displayProps.getProperty("dog_image_path"));
+		
+		int frameW = Integer.parseInt(displayProps.getProperty("frame_width"));
+		int frameH = Integer.parseInt(displayProps.getProperty("frame_height"));
 
-		portfolioXcenter = xAxis.marketSharePosition(1, 1);
-		portfolioYcenter = yAxis.marketGrowthPosition(growthTarget);
-
-		// Initialize SelectOneButtons
-		// String[] detailgrad = { "Segment", "Marke" };
-		// sob = new SelectOneButtons(this, detailgrad, 200, 60, 580, 15, 80);
-
+		size(frameW, frameH);
+		
 		// Initialize CheckBox
-		PImage hook = loadImage("control/icon-check.png");
-		cb = new CheckBox(this, 20, 580, 15, hook);
+		int boxX = Integer.parseInt(displayProps.getProperty("box_x"));
+		int boxY = Integer.parseInt(displayProps.getProperty("box_y"));
+		int boxS = Integer.parseInt(displayProps.getProperty("box_size"));
+		PImage hook = loadImage(displayProps.getProperty("hook_image_path"));
+		String cbText = textProps.getProperty("checkBox_text");
+		
+		cb = new CheckBox(this, boxX, boxY, boxS, hook, cbText);
 		checked = cb.isCheck();
 		pchecked = !checked;
 
 		// Initialize Scrollbar
 		periods = data.getPeriods();
-		int periodCount = data.getPeriodsCount();
-		String[] periods = new String[periodCount];
-		for (int i = 0; i < periodCount; i++){
-			periods[i] = this.periods.get(i).toString();
-		}
-		sb = new Scrollbar(this, 15, 545, 550, 20, periods);
-		sb.setLoose(32);
-		sb.setLabel(periods);
+
+		int barX = Integer.parseInt(displayProps.getProperty("scroll_x"));
+		int barY = Integer.parseInt(displayProps.getProperty("scroll_y"));
+		int barW = Integer.parseInt(displayProps.getProperty("scroll_width"));
+		int barH = Integer.parseInt(displayProps.getProperty("scroll_height"));
+		int barL = Integer.parseInt(displayProps.getProperty("scroll_loose"));
+
+		sb = new Scrollbar(this, barX, barY, barW, barH, barL, periods.toArray());
 	}
 
 	@Override
 	public void draw() {
-		// sob.update();
 		cb.update();
 		sb.update();
-		yAxis.update();
-		xAxis.update();
-		createSBUCircles();
-		for (SBUCircle sbu : sbuCircles) {
-			sbu.update();
-		}
+		area.update();
 		background(255);
-		// sob.display();
 		cb.display();
 		sb.display();
-		drawPortfolioRect();
-		// Draw Portfolio
-		for (SBUCircle c : sbuCircles) {
-			c.display();
-		}
-		drawCrossWire();
-		drawProtfolioInfo();
+		area.display();
+		info.display();
 		pperiod = period;
 		pchecked = checked;
 	}
@@ -154,315 +151,576 @@ public class Portfolio extends PApplet {
 				* sin(angle + arrowAngle));
 	}
 
-	private void loadData() {
-		try {
-			Class<?> data = getClass().getClassLoader().loadClass(dataClass);
-			Object obj = data.newInstance();
-			if (obj instanceof MarketData)
-				this.data = (MarketData) obj;
-			else {
-				System.err.println("No valid Data");
-				System.exit(0);
-			}
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-			System.exit(0);
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-			System.exit(0);
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
-	}
+	public class PortfolioArea {
 
-	private void createSBUCircles() {
-		int area = sb.getActualArea();
-		period = periods.get(area - 1);
-		List<PeriodSBU> sbus = period.getSBUs();
-		if (!period.equals(pperiod)) {
-			sbuCircles = new ArrayList<>(sbus.size());
-			for (PeriodSBU s : sbus) {
-				sbuCircles.add(new SBUCircle(period.getCompanyTurnover(), s));
-			}
-			if (!sbuCircles.contains(selectedCircle)){
-				selectedCircle = null;
-			}
-		}
-		checked = cb.isCheck();
-		if ((pchecked != checked || !period.equals(pperiod)) && checked
-				&& area > 1) {
-			Period pp = periods.get(area - 2);
-			List<PeriodSBU> preSBU = pp.getSBUs();
-			for (SBUCircle c : sbuCircles) {
-				int index = preSBU.indexOf(c.getSBU());
-				if (index == -1) {
-					continue;
-				}
-				c.setPrevious(new SBUCircle(pp.getCompanyTurnover(), preSBU
-						.get(index)));
-			}
-		} else if (!checked) {
-			for (SBUCircle c : sbuCircles) {
-				c.setPrevious(null);
-			}
-		}
-	}
+		/**
+		 * X-Position where the Portfolio starts
+		 */
+		private float x1 = Float.parseFloat(displayProps
+				.getProperty("portfolio_x"));;
 
-	private void drawPortfolioRect() {
-		stroke(0);
-		strokeWeight(1);
-		fill(250);
-		rect(15, 15, 550, 520);
-		xAxis.display();
-		yAxis.display();
+		/**
+		 * Y-Position where the Portfolio starts
+		 */
+		private float y1 = Integer.parseInt(displayProps
+				.getProperty("portfolio_y"));;
+
+		/**
+		 * Width of the Portfolio
+		 */
+		private float w1 = Integer.parseInt(displayProps
+				.getProperty("portfolio_width"));;
+
+		/**
+		 * Height of the Portfolio
+		 */
+		private float h1 = Integer.parseInt(displayProps
+				.getProperty("portfolio_height"));;
+
+		/**
+		 * X-Middle of the Portfolio
+		 */
+		private float xCenter = x1 + w1 / 2;
+
+		/**
+		 * Y-Middle of the Portfolio
+		 */
+		private float yCenter = y1 + h1 / 2;
+
+		/**
+		 * Count of dashes for the center cross
+		 */
+		private int dashs = Integer.parseInt(displayProps
+				.getProperty("portfolio_dash_count"));
+
+		/**
+		 * Count of dashes for the cross wire
+		 */
+		private int wdashs = Integer.parseInt(displayProps
+				.getProperty("cross_wire_dash_count"));
 		
-		float xpos1 = 80 + (portfolioXcenter - 80)/2;
-		float ypos1 = 20 + (portfolioYcenter - 20)/2;
-		float xpos2 = portfolioXcenter + (portfolioXcenter - 80)/2;
-		float ypos2 = portfolioYcenter + (portfolioYcenter - 20)/2;
+		/**
+		 * X-Position of cross wire information
+		 */
+		private float xInfo = Float.parseFloat(displayProps.getProperty("cross_wire_text_x"));
 		
-		imageMode(CENTER);
-		image(star, xpos1, ypos1);
-		image(questonmark, xpos2, ypos1);
-		image(poorDog, xpos2, ypos2);
-		image(cashCow, xpos1, ypos2);
-		
-		dashedLine(portfolioXcenter, 20, portfolioXcenter, 490, 128);
-		dashedLine(80, portfolioYcenter, 550, portfolioYcenter, 128);
-	}
+		/**
+		 * Y-Position of cross wire information
+		 */
+		private float yInfo = Float.parseFloat(displayProps.getProperty("cross_wire_text_y"));
 
-	private void drawCrossWire() {
-		String share, market;
-		if (hoverPortfolioRect()) {
-			strokeWeight((float) 0.5);
-			if (hoverdCircle == null) {
-				dashedLine(mouseX, 20, mouseX, 490, 64);
-				dashedLine(80, mouseY, 550, mouseY, 64);
-				share = xAxis.getRelation(mouseX);
-				market = yAxis.getMarketGrowth(mouseY);
-			} else {
-				dashedLine(hoverdCircle.xpos, 20, hoverdCircle.xpos, 490, 64);
-				dashedLine(80, hoverdCircle.ypos, 550, hoverdCircle.ypos, 64);
-				share = xAxis.getRelation(hoverdCircle.xpos);
-				market = yAxis.getMarketGrowth(hoverdCircle.ypos);
-			}
-		} else {
-			share = " - ";
-			market= " - ";
-		}
-		textAlign(LEFT, TOP);
-		textSize(8);
-		fill(0);
-		text("Relativer Markanteil (" + we + " / Rivale): " + share + " || Marktwachstum: " + market, 20, 2);
-		
-	}
+		/**
+		 * X-start-position of portfolio background
+		 */
+		private float x2 = Integer.parseInt(displayProps
+				.getProperty("portfolio_background_x"));;
 
-	private boolean hoverPortfolioRect() {
-		if (mouseX < 80) {
-			return false;
-		}
-		if (mouseX > 80 + 470) {
-			return false;
-		}
-		if (mouseY < 20) {
-			return false;
-		}
-		if (mouseY > 490) {
-			return false;
-		}
-		return true;
-	}
+		/**
+		 * Y-start-position of portfolio background
+		 */
+		private float y2 = Integer.parseInt(displayProps
+				.getProperty("portfolio_background_y"));;
 
-	private void drawProtfolioInfo() {
-		strokeWeight(1);
-		fill(0);
-		textSize(12);
-		textAlign(LEFT, TOP);
-		text("Periode: " + period, 580, 50);
-		if (selectedCircle != null) {
-			PeriodSBU sbu = selectedCircle.getSBU();
-			text(sbu.toString(), 580, 85);
-			text("Mit Wachstum von: " + sbu.getMarketGrowth(), 580, 110);
-			StringBuilder ownBrands = new StringBuilder("Marken von " + we);
-			for (PeriodBrand brand : sbu.getOwnBrands()) {
-				ownBrands.append("\n\u2192\t" + brand);
-			}
-			ownBrands.append("\nVolumen: " + sbu.getOwnMarketShare());
+		/**
+		 * Width of portfolio background
+		 */
+		private float w2 = Integer.parseInt(displayProps
+				.getProperty("portfolio_background_width"));
 
-			StringBuilder rivalBrands = new StringBuilder("Konkurrent: "
-					+ sbu.getRival());
-			for (PeriodBrand brand : sbu.getRivalBrands()) {
-				rivalBrands.append("\n\u2192" + brand);
-			}
-			rivalBrands.append("\nVolumen: " + sbu.getRivalMarketShare());
+		/**
+		 * Height of portfolio background
+		 */
+		private float h2 = Integer.parseInt(displayProps
+				.getProperty("portfolio_background_height"));
 
-			dashedLine(580, 145, 800, 145, 32);
-			text(ownBrands.toString(), 580, 150);
-			dashedLine(580, 320, 800, 320, 32);
-			text(rivalBrands.toString(), 580, 325);
-		} else {
-			text("Geschäftsfelder:", 580, 85);
-			for (int i = 0; i < sbuCircles.size(); i++) {
-				SBUCircle sbu = sbuCircles.get(i);
-				if (hoverdCircle == sbu) {
-					fill(200, 255);
-				} else {
-					fill(0, 255);
-				}
-				text("\u2192 " + sbu, 580, 110 + i * 25);
-			}
-		}
-	}
+		/**
+		 * Axis, which gives the x-position of an SBU
+		 */
+		private Abscissa xAxis;
 
-	public class SBUCircle {
+		/**
+		 * Axis, which gives the y-position of an SBU
+		 */
+		private Ordinate yAxis;
 
-		private PeriodSBU sbu;
+		/**
+		 * List of circles, representing the SBUs
+		 */
+		private ArrayList<SBUCircle> sbuCircles;
 
-		private float radius;
+		/**
+		 * SBU which is hovered
+		 */
+		private SBUCircle hSBU = null;
 
-		private float xpos;
+		/**
+		 * SBU which is selected
+		 */
+		private SBUCircle sSBU = null;
 
-		private float ypos;
+		/**
+		 * Indicates whether the mouse pointer hovers the portfolio
+		 */
+		private boolean over;
 
-		private float opacity = 127;
+		/**
+		 * Circle color for SBUs, which are inside the star area.
+		 */
+		private SBUColor cStar = new SBUColor(
+				displayProps.getProperty("sbu_color_star"));
+		/**
+		 * Circle color for SBUs, which are inside the questionmark area.
+		 */
+		private SBUColor cQuest = new SBUColor(
+				displayProps.getProperty("sbu_color_quest"));
 
-		private SBUCircle previous = null;
+		/**
+		 * Circle color for SBUs, which are inside the cash cow area.
+		 */
+		private SBUColor cCow = new SBUColor(
+				displayProps.getProperty("sbu_color_cow"));
 
-		public SBUCircle(float wholeTurnover, PeriodSBU sbu) {
-			this.sbu = sbu;
-			radius = sbu.getOwnMarketShare() / wholeTurnover * 100;
-			xpos = xAxis.marketSharePosition(sbu.getOwnMarketShare(),
-					sbu.getRivalMarketShare());
-			ypos = yAxis.marketGrowthPosition(sbu.getMarketGrowth());
+		/**
+		 * Circle color for SBUs, which are inside the poor dog area.
+		 */
+		private SBUColor cDog = new SBUColor(
+				displayProps.getProperty("sbu_color_dog"));
+
+		/**
+		 * Circle color for highlighted SBUs, which are inside the star area.
+		 */
+		private SBUColor hStar = new SBUColor(
+				displayProps.getProperty("sbu_highlight_star"));
+
+		/**
+		 * Circle color for highlighted SBUs, which are inside the questionmark area.
+		 */
+		private SBUColor hQuest = new SBUColor(
+				displayProps.getProperty("sbu_highlight_quest"));
+
+		/**
+		 * Circle color for highlighted SBUs, which are inside the cash cow area.
+		 */
+		private SBUColor hCow = new SBUColor(
+				displayProps.getProperty("sbu_highlight_cow"));
+
+		/**
+		 * Circle color for highlighted SBUs, which are inside the poor dog area.
+		 */
+		private SBUColor hDog = new SBUColor(
+				displayProps.getProperty("sbu_highlight_dog"));
+
+		/**
+		 * Initializes the x- and y-Axis  
+		 */
+		public PortfolioArea() {
+
+			int marker = Integer.parseInt(displayProps
+					.getProperty("axis_marker_length"));
+
+			int logBase = Integer.parseInt(displayProps.getProperty("logBase"));
+			String xTitle = textProps.getProperty("xAxis_title");
+			xAxis = new Abscissa(Portfolio.this, x1, y1 + h1, w1, marker,
+					logBase, xTitle);
+
+			int range = Integer.parseInt(displayProps
+					.getProperty("yAxis_range"));
+			float target = data.getTargetGrowth();
+			String yTitle = textProps.getProperty("yAxis_title");
+			
+			yAxis = new Ordinate(Portfolio.this, x1, y1, h1, marker, target,
+					range, yTitle);
+
 		}
 
 		public void update() {
-			boolean over = mouseOver();
-			boolean mouse = (mouseButton == LEFT);
-			if (over) {
-				hoverdCircle = this;
-				if (mouse) {
-					selectedCircle = this;
-				}
-			} else {
-				if (equals(selectedCircle)) {
-					if (mouse && hoverPortfolioRect()) {
-						selectedCircle = null;
-					} else if (this != selectedCircle){
-						selectedCircle = this;
-					}
-				}
-			}
-			if (!over && hoverdCircle == this) {
-				hoverdCircle = null;
+			over = mouseOver();
+			yAxis.update();
+			xAxis.update();
+			createSBUCircles();
+			for (SBUCircle sbu : sbuCircles) {
+				sbu.update();
 			}
 		}
 
 		public void display() {
-			float depth;
-			if (hoverdCircle != null && equals(hoverdCircle)) {
-				depth = 200;
-			} else {
-				depth = 0;
-			}
-			strokeWeight(equals(selectedCircle) ? 3 : 1);
-			ellipseMode(RADIUS);
-			if (xpos <= portfolioXcenter) {
-				if (ypos > portfolioYcenter)
-					fill(depth, 255, depth, opacity); // Color Questionmarks
-				else
-					fill(255, 255, depth, opacity); // Color poor dogs
-			} else {
-				if (ypos > portfolioYcenter)
-					fill(depth, depth, 255, opacity);// Color Stars
-				else
-					fill(255, depth, depth, opacity); // Color cash cows
-			}
+			// draw Circles
+			stroke(0);
+			strokeWeight(1);
+			fill(250);
+			rect(x2, y2, w2, h2);
+			xAxis.display();
+			yAxis.display();
 
-			ellipse(xpos, ypos, radius, radius);
-			if (previous != null) {
-				previous.display();
+			float xpos1 = x1 + (xCenter - x1) / 2;
+			float ypos1 = y1 + (yCenter - y1) / 2;
+			float xpos2 = xCenter + (xCenter - x1) / 2;
+			float ypos2 = yCenter + (yCenter - y1) / 2;
 
-				strokeWeight(2);
-				arrowline(previous.xpos, previous.ypos, xpos, ypos);
+			imageMode(CENTER);
+			image(star, xpos1, ypos1);
+			image(quest, xpos2, ypos1);
+			image(dog, xpos2, ypos2);
+			image(cow, xpos1, ypos2);
 
-				strokeWeight(1);
-				float deltaX = (previous.xpos - xpos);
-				float deltaY = (previous.ypos - ypos);
-				float angle = deltaY / sqrt(deltaX * deltaX + deltaY * deltaY);
-				angle = asin(angle) + radians(90);
-				if (deltaX < 0) {
-					angle = -angle + PI;
+			dashedLine(xCenter, y1, xCenter, y1 + w1, dashs);
+			dashedLine(x1, yCenter, x1 + h1, yCenter, dashs);
+
+			// Draw cross wire
+			String share, market;
+			if (over) {
+				strokeWeight((float) 0.5);
+				if (hSBU == null) {
+					dashedLine(mouseX, y1, mouseX, y1 + h1, wdashs);
+					dashedLine(x1, mouseY, x1 + w1, mouseY, wdashs);
+					share = xAxis.getRelation(mouseX);
+					market = yAxis.getMarketGrowth(mouseY);
+				} else {
+					dashedLine(hSBU.xpos, y1, hSBU.xpos, y1 + h1, wdashs);
+					dashedLine(x1, hSBU.ypos, x1 + w1, hSBU.ypos, wdashs);
+					share = xAxis.getRelation(hSBU.xpos);
+					market = yAxis.getMarketGrowth(hSBU.ypos);
 				}
-				dashedLine(previous.xpos + previous.radius * cos(angle),
-						previous.ypos + previous.radius * sin(angle), xpos
-								+ radius * cos(angle), ypos + radius
-								* sin(angle), 32);
-				dashedLine(previous.xpos - previous.radius * cos(angle),
-						previous.ypos - previous.radius * sin(angle), xpos
-								- radius * cos(angle), ypos - radius
-								* sin(angle), 32);
+			} else {
+				share = " - ";
+				market = " - ";
+			}
+			textAlign(LEFT, TOP);
+			textSize(8);
+			fill(0);
+			text("Relativer Markanteil (" + venture + " / Rivale): " + share
+					+ " || Marktwachstum: " + market, xInfo, yInfo);
+
+			for (SBUCircle c : sbuCircles) {
+				c.display();
 			}
 		}
 
 		public boolean mouseOver() {
-			if (pow((mouseX - xpos), 2) > pow(radius, 2)) {
-				return previous != null && previous.mouseOver();
+			if (mouseX < x1) {
+				return false;
 			}
-			if (pow((mouseY - ypos), 2) > pow(radius, 2)) {
-				return previous != null && previous.mouseOver();
+			if (mouseX > x1 + w1) {
+				return false;
+			}
+			if (mouseY < y1) {
+				return false;
+			}
+			if (mouseY > y1 + h1) {
+				return false;
 			}
 			return true;
 		}
 
-		public PeriodSBU getSBU() {
-			return sbu;
-		}
-
-		public void setPrevious(SBUCircle previous) {
-			if (previous != null) {
-				previous.opacity = opacity / 3;
+		private void createSBUCircles() {
+			int area = sb.getActualArea();
+			period = periods.get(area - 1);
+			List<PeriodSBU> sbus = period.getSBUs();
+			if (!period.equals(pperiod)) {
+				sbuCircles = new ArrayList<>(sbus.size());
+				for (PeriodSBU s : sbus) {
+					sbuCircles
+							.add(new SBUCircle(period.getCompanyTurnover(), s));
+				}
+				if (!sbuCircles.contains(sSBU)) {
+					sSBU = null;
+				}
 			}
-			this.previous = previous;
+			checked = cb.isCheck();
+			if ((pchecked != checked || !period.equals(pperiod)) && checked
+					&& area > 1) {
+				Period pp = periods.get(area - 2);
+				List<PeriodSBU> preSBU = pp.getSBUs();
+				for (SBUCircle c : sbuCircles) {
+					int index = preSBU.indexOf(c.getSBU());
+					if (index == -1) {
+						continue;
+					}
+					c.setPrevious(new SBUCircle(pp.getCompanyTurnover(), preSBU
+							.get(index)));
+				}
+			} else if (!checked) {
+				for (SBUCircle c : sbuCircles) {
+					c.setPrevious(null);
+				}
+			}
 		}
 
-		@Override
-		public String toString() {
-			return sbu.toString();
-		}
+		public class SBUCircle {
 
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + getOuterType().hashCode();
-			result = prime * result + ((sbu == null) ? 0 : sbu.hashCode());
-			return result;
-		}
+			private PeriodSBU sbu;
 
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
+			private float radius;
+
+			private float xpos;
+
+			private float ypos;
+
+			private SBUCircle previous = null;
+
+			private float opacity = Integer.parseInt(displayProps
+					.getProperty("sbu_opacity"));
+
+			public SBUCircle(float wholeTurnover, PeriodSBU sbu) {
+				this.sbu = sbu;
+				int n = Integer.parseInt(displayProps
+						.getProperty("sbu_radius_factor"));
+
+				radius = sbu.getOwnMarketShare() / wholeTurnover * n;
+
+				xpos = xAxis.marketSharePosition(sbu.getOwnMarketShare(),
+						sbu.getRivalMarketShare());
+
+				ypos = yAxis.marketGrowthPosition(sbu.getMarketGrowth());
+			}
+
+			public void update() {
+				boolean over = mouseOver();
+				boolean mouse = (mouseButton == LEFT);
+				if (over) {
+					hSBU = this;
+					if (mouse) {
+						sSBU = this;
+					}
+				} else {
+					if (equals(sSBU)) {
+						if (mouse && getOuterType().over) {
+							sSBU = null;
+						} else if (this != sSBU) {
+							sSBU = this;
+						}
+					}
+				}
+				if (!over && hSBU == this) {
+					hSBU = null;
+				}
+			}
+
+			public void display() {
+				strokeWeight(equals(sSBU) ? 3 : 1);
+				ellipseMode(RADIUS);
+				if (hSBU != null && equals(hSBU)) {
+					if (xpos <= xCenter) {
+						if (ypos > yCenter)
+							fill(hQuest.r, hQuest.g, hQuest.b, opacity);
+						else
+							fill(hDog.r, hDog.g, hDog.b, opacity);
+					} else {
+						if (ypos > yCenter)
+							fill(hStar.r, hStar.g, hStar.b, opacity);
+						else
+							fill(hCow.r, hCow.g, hCow.b, opacity);
+					}
+				} else {
+					if (xpos <= xCenter) {
+						if (ypos > yCenter)
+							fill(cQuest.r, cQuest.g, cQuest.b, opacity);
+						else
+							fill(cDog.r, cDog.g, cDog.b, opacity);
+					} else {
+						if (ypos > yCenter)
+							fill(cStar.r, cStar.g, cStar.b, opacity);
+						else
+							fill(cCow.r, cCow.g, cCow.b, opacity);
+					}
+				}
+
+				ellipse(xpos, ypos, radius, radius);
+				// draw previous SBU
+				if (previous != null) {
+					previous.display();
+
+					strokeWeight(2);
+					arrowline(previous.xpos, previous.ypos, xpos, ypos);
+
+					strokeWeight(1);
+					float deltaX = (previous.xpos - xpos);
+					float deltaY = (previous.ypos - ypos);
+					float angle = deltaY
+							/ sqrt(deltaX * deltaX + deltaY * deltaY);
+					angle = asin(angle) + radians(90);
+					if (deltaX < 0) {
+						angle = -angle + PI;
+					}
+					float x11 = previous.xpos + previous.radius * cos(angle);
+					float y11 = previous.ypos + previous.radius * sin(angle);
+					float x12 = xpos + radius * cos(angle);
+					float y12 = ypos + radius * sin(angle);
+					dashedLine(x11, y11, x12, y12, 32);
+
+					float x21 = previous.xpos - previous.radius * cos(angle);
+					float y21 = previous.ypos - previous.radius * sin(angle);
+					float x22 = xpos - radius * cos(angle);
+					float y22 = ypos - radius * sin(angle);
+					dashedLine(x21, y21, x22, y22, 32);
+				}
+			}
+
+			public boolean mouseOver() {
+				if (pow((mouseX - xpos), 2) > pow(radius, 2)) {
+					return previous != null && previous.mouseOver();
+				}
+				if (pow((mouseY - ypos), 2) > pow(radius, 2)) {
+					return previous != null && previous.mouseOver();
+				}
 				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			SBUCircle other = (SBUCircle) obj;
-			if (!getOuterType().equals(other.getOuterType()))
-				return false;
-			if (sbu == null) {
-				if (other.sbu != null)
+			}
+
+			public PeriodSBU getSBU() {
+				return sbu;
+			}
+
+			public void setPrevious(SBUCircle previous) {
+				if (previous != null) {
+					int b = Integer.parseInt(displayProps
+							.getProperty("sbu_opacity_denominator"));
+					previous.opacity = opacity / b;
+				}
+				this.previous = previous;
+			}
+
+			@Override
+			public String toString() {
+				return sbu.toString();
+			}
+
+			@Override
+			public int hashCode() {
+				final int prime = 31;
+				int result = 1;
+				result = prime * result + getOuterType().hashCode();
+				result = prime * result + ((sbu == null) ? 0 : sbu.hashCode());
+				return result;
+			}
+
+			@Override
+			public boolean equals(Object obj) {
+				if (this == obj)
+					return true;
+				if (obj == null)
 					return false;
-			} else if (!sbu.equals(other.sbu))
-				return false;
-			return true;
+				if (getClass() != obj.getClass())
+					return false;
+				SBUCircle other = (SBUCircle) obj;
+				if (!getOuterType().equals(other.getOuterType()))
+					return false;
+				if (sbu == null) {
+					if (other.sbu != null)
+						return false;
+				} else if (!sbu.equals(other.sbu))
+					return false;
+				return true;
+			}
+
+			private PortfolioArea getOuterType() {
+				return PortfolioArea.this;
+			}
 		}
 
-		private Portfolio getOuterType() {
-			return Portfolio.this;
+		public class SBUColor {
+
+			private float r;
+
+			private float g;
+
+			private float b;
+
+			public SBUColor(String prop) {
+				String[] values = prop.split(",");
+				r = Float.parseFloat(values[0]);
+				g = Float.parseFloat(values[1]);
+				b = Float.parseFloat(values[2]);
+			}
+
 		}
+	}
+	
+	public class PortfolioInfo{
+		
+		private float x = Float.parseFloat(displayProps.getProperty("text_x_pos"));
+		
+		private float h1pos = Float.parseFloat(displayProps.getProperty("header1_pos"));
+		
+		private float h2pos = Float.parseFloat(displayProps.getProperty("header2_pos"));
+		
+		private float ownPos = Float.parseFloat(displayProps.getProperty("text_pos_own_brands"));
+		
+		private float s1 = Float.parseFloat(displayProps.getProperty("pos_separator1"));
+		
+		private float s2 = Float.parseFloat(displayProps.getProperty("pos_separator2"));
+		
+		private float sEnd = Float.parseFloat(displayProps.getProperty("end_separator"));
+		
+		private float sDashs = Float.parseFloat(displayProps.getProperty("sep_dash_count"));
+		
+		private float rivalPos = Float.parseFloat(displayProps.getProperty("text_pos_rival_brands"));
+		
+		private float sbuList = Float.parseFloat(displayProps.getProperty("text_pos_sbuList"));
+		
+		private float dist = Float.parseFloat(displayProps.getProperty("entry_distance"));
+		
+		private int h1Size = Integer.parseInt(textProps.getProperty("header1_size"));
+		
+		private int h2Size = Integer.parseInt(textProps.getProperty("header2_size"));
+		
+		private int textSize = Integer.parseInt(textProps.getProperty("text_size"));
+		
+		private float cText = Float.parseFloat(textProps.getProperty("text_grey"));
+		
+		private float hText = Float.parseFloat(textProps.getProperty("text_Higlight"));
+		
+		private String h1 = textProps.getProperty("info_header1");
+		
+		private String hSBU = textProps.getProperty("sbu_header");
+		
+		private String brands = textProps.getProperty("brands_of");
+		
+		private String overview = textProps.getProperty("overview");
+		
+		public void display(){
+			strokeWeight(1);
+			fill(cText);
+			textSize(h1Size);
+			textAlign(LEFT, TOP);
+			text(String.format(h1, period), x, h1pos);
+			if (area.sSBU != null) {
+				PeriodSBU sbu = area.sSBU.getSBU();
+				textSize(h2Size);
+				text(String.format(hSBU, sbu.toString(),sbu.getMarketGrowth()), x, h2pos);
+				
+				StringBuilder ownBrands = new StringBuilder();
+				for (PeriodBrand brand : sbu.getOwnBrands()) {
+					ownBrands.append("\n\u2192\t" + brand);
+				}
+				String own = String.format(brands, venture, ownBrands.toString(), sbu.getOwnMarketShare());
+
+				StringBuilder rivalBrands = new StringBuilder();
+				for (PeriodBrand brand : sbu.getRivalBrands()) {
+					rivalBrands.append("\n\u2192" + brand);
+				}
+				String rival = String.format(brands, sbu.getRival(), rivalBrands.toString(), sbu.getRivalMarketShare());
+
+				textSize(textSize);
+				dashedLine(x, s1, sEnd, s1, sDashs);
+				text(own, x, ownPos);
+				dashedLine(x, s2, sEnd, s2, sDashs);
+				text(rival, x, rivalPos);
+			} else {
+				textSize(h2Size);
+				text(overview, x, h2pos);
+				for (int i = 0; i < area.sbuCircles.size(); i++) {
+					SBUCircle sbu = area.sbuCircles.get(i);
+					if (area.hSBU == sbu) {
+						fill(hText);
+					} else {
+						fill(cText);
+					}
+					textSize(textSize);
+					text("\u2192 " + sbu, x, sbuList + i * dist);
+				}
+			}
+		}
+		
 	}
 
 	public static void analyseData(String dataClass, String[] args) {

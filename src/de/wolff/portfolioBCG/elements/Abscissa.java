@@ -7,10 +7,14 @@ import processing.core.PApplet;
 public class Abscissa extends AbstractAxis {
 	
 	private int logBase = 5;
+	
+	private String title;
 
 	public Abscissa(PApplet app, float xpos, float ypos, float length,
-			float markerlength) {
+			float markerlength, int logBase, String title) {
 		super(app, xpos, ypos, length, markerlength);
+		this.logBase = logBase;
+		this.title = title;
 	}
 	
 	public void update(){
@@ -43,7 +47,7 @@ public class Abscissa extends AbstractAxis {
 		}
 		
 		app.textSize(16);
-		app.text("Relativer Marktanteil (log" + logBase +")", xpos + length/2, ypos + 20);
+		app.text(String.format(title, logBase), xpos + length/2, ypos + 20);
 	}
 
 	public float marketSharePosition(float own, float rival) {
@@ -67,10 +71,6 @@ public class Abscissa extends AbstractAxis {
 			rival = 1;
 		}
 		return getFormated(own) + " / " + getFormated(rival);
-	}
-	
-	public void setLogBase(int logBase){
-		this.logBase = logBase;
 	}
 
 }

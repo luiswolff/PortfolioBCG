@@ -14,13 +14,16 @@ public class CheckBox {
 	private boolean over;
 	private boolean clicked = false;
 	private boolean checked = false;
+	
+	private String title;
 
-	public CheckBox(PApplet app, int size, int xPos, int yPos, PImage hook) {
+	public CheckBox(PApplet app, int xPos, int yPos, int size, PImage hook, String title) {
 		this.app = app;
 		this.size = size;
 		this.xPos = xPos;
 		this.yPos = yPos;
 		this.hook = hook;
+		this.title = title;
 	}
 
 	public boolean mouseOver() {
@@ -66,6 +69,6 @@ public class CheckBox {
 		
 		app.textAlign(PApplet.LEFT, PApplet.CENTER);
 		app.textSize(16);
-		app.text("Zeige Vorperiode", xPos + 30, yPos + 10);
+		app.text(String.format(title, checked), xPos + 30, yPos + 10);
 	}
 }
