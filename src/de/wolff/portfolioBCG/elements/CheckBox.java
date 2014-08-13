@@ -60,7 +60,7 @@ public class CheckBox {
 			app.stroke(0);
 			app.fill(50);
 		}
-		app.strokeWeight(10);
+		app.strokeWeight(5);
 		app.rect(xPos, yPos, size, size);
 		app.imageMode(PApplet.CORNER);
 		if (checked) {

@@ -1,7 +1,5 @@
 package de.wolff.portfolioBCG.elements;
 
-import java.util.Arrays;
-
 import processing.core.PApplet;
 
 public class Abscissa extends AbstractAxis {
@@ -11,26 +9,31 @@ public class Abscissa extends AbstractAxis {
 	private String title;
 
 	public Abscissa(PApplet app, float xpos, float ypos, float length,
-			float markerlength, int logBase, String title) {
-		super(app, xpos, ypos, length, markerlength);
+			float markerlength, int markerCount, int logBase, String title) {
+		super(app, xpos, ypos, length, markerlength, markerCount);
 		this.logBase = logBase;
 		this.title = title;
+		
+		makeMarkers();
 	}
 	
-	public void update(){
-		float own = 1;
-		float rival = logBase;
+	private void makeMarkers(){
+		markers = new float[markerCount];
+		labels = new String[markerCount];
+		
 		int i = 0;
-		while (rival > 0) {
-			markers = Arrays.copyOf(markers, i + 1);
-			markerTexts = Arrays.copyOf(markerTexts, i + 1);
-			markers[i] = marketSharePosition(own, rival);
-			markerTexts[i] = getFormated(own / rival);
-			if (own < rival)
-				own++;
+		int j = ((markerCount - 1) / 2);
+		int k = 0;
+		while (k < markerCount){
+			float n = 1 + (logBase - 1) * i / ((markerCount - 1) / 2);
+			float m = 1 + (logBase - 1) * j / ((markerCount - 1) / 2);
+			markers[k] = xPosOf(n, m);
+			labels[k] = getFormated(n / m);
+			if ( i < j)
+				i++;
 			else
-				rival--;
-			i++;
+				j--;
+			k++;
 		}
 	}
 
@@ -43,20 +46,20 @@ public class Abscissa extends AbstractAxis {
 		float markerHalf = markerlength / 2;
 		for (int i = 0; i < markers.length ;i++){
 			app.line(markers[i], ypos + markerHalf, markers[i], ypos - markerHalf);
-			app.text(markerTexts[i], markers[i], ypos + markerlength);
+			app.text(labels[i], markers[i], ypos + markerlength);
 		}
 		
 		app.textSize(16);
 		app.text(String.format(title, logBase), xpos + length/2, ypos + 20);
 	}
 
-	public float marketSharePosition(float own, float rival) {
+	public float xPosOf(float own, float rival) {
 		float balance = length / 2;
 		float logMultiplier = PApplet.log(own / rival) / PApplet.log(logBase);
 		return xpos + balance - balance * logMultiplier;
 	}
 	
-	public String getRelation(float xpos){
+	public String relationOf(float xpos){
 		float balance = length / 2;
 		float difFactor = PApplet.pow(logBase, (xpos - this.xpos - balance) / - balance);
 		float own, rival;

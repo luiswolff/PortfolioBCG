@@ -14,18 +14,20 @@ public abstract class AbstractAxis {
 	protected float ypos;
 	protected float length;
 	protected float markerlength;
+	protected int markerCount;
 	
 	protected float[] markers = new float[0];
 	
-	protected String[] markerTexts = new String[0];
+	protected String[] labels = new String[0];
 	
-	public AbstractAxis(PApplet app, float xpos, float ypos, float length, float markerlength) {
+	public AbstractAxis(PApplet app, float xpos, float ypos, float length, float markerlength, int markerCount) {
 		super();
 		this.app = app;
 		this.xpos = xpos;
 		this.ypos = ypos;
 		this.length = length;
 		this.markerlength = markerlength;
+		this.markerCount = markerCount;
 	}
 	
 	protected String getFormated(float number){

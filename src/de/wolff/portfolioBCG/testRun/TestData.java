@@ -78,7 +78,7 @@ public class TestData implements MarketData {
 			PeriodBrand b = new PeriodBrand(brand, m, turnover);
 
 			if (we.equals(m))
-				p.addCompanyTurnover(b.getTurnover());
+				p.setCompanyTurnover(p.getCompanyTurnover() + b.getTurnover());
 			sbu.addBrand(b);
 		}
 	}

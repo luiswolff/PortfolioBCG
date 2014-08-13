@@ -23,8 +23,8 @@ public class Period {
 		return sbus;
 	}
 	
-	public void addCompanyTurnover(float t){
-		companyTurnover += t;
+	public void setCompanyTurnover(float companyTurnover){
+		this.companyTurnover = companyTurnover;
 	}
 	
 	public float getCompanyTurnover() {
