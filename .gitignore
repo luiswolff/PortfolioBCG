@@ -1,6 +1,17 @@
+# Eclipse files
 /bin
 /.settings
 /.classpath
 /.project
 
 .readme.md.html
+
+# IntelliJ files
+/.idea
+
+*.iml
+*.ipr
+*.iws
+
+#Maven target
+/target
